@@ -9,6 +9,8 @@ pip3 install virtualenvwrapper //安装virtualenvwrapper
 
 ### 配置virtualenvwrappter
 
+配置这玩意儿，需要环境变量里面需要保证的python和virtualenv可用
+
 ```shell
 echo "export WORKON_HOME=~/Envs\nexport PROJECT_HOME=~/workspace/pythonProject\nsource /usr/local/bin/virtualenvwrapper.sh" >> ~/.bash_profile  //写入WORKON_HOME、PROJECT_HOME、以及相关设置 到环境变量中
 source ~/.bash_profile
@@ -28,4 +30,3 @@ virtualenvwrapper官网地址：[https://virtualenvwrapper.readthedocs.io](https
 * deactivate 退出虚拟环境
 
 其他命令，请详细查看官方的[Command Reference](https://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#)
-
