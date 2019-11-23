@@ -20,3 +20,19 @@
           		enabled: true
     ```
 
+
+
+* maven打包
+
+  ```
+  mvn clean 清理上次生成的
+  mvn package -Dmaven.test.skip=true
+  ```
+
+
+* springboot默认异常处理类
+
+* ```
+  ResponseEntityExceptionHandler
+  
+  ```
