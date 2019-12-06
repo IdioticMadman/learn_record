@@ -11,7 +11,7 @@
 
 * IoContext：全局上下文，含有一个Scheduler，IoProvder的实现。
 * IoProvider：socketChannel注册到这个provider，当channel就绪（当前可读或可写）时，提供回调，进行读写。全局一份，存放再IoContext中。
-* IoArgs：封装ByteBuffer，并提供对channel的读写。
+* IoArgs：封装ByteBuffer，并提供对channel的读写的方法。
 * Frame：从channel中每次接收或发送的数据帧。一个packet可能会被拆成多个Frame进行发送。
 * Packet：一份Packet，表示业务层，想（发送|接收）的一个包，可以是一段文字，一个文件，一个语音连接。
 * Connector：表示一个链接，即服务端，和客户端。提供发送，以及接收到数据时给出回调。当有语音传输时，负责绑定语音传输的channel。
@@ -81,7 +81,7 @@
 
 #### 发送流程解析
 
-
+Sender.send(Packet)->
 
 #### 接收流程解析
 
