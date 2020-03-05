@@ -16,8 +16,8 @@
 * Packet：一份Packet，表示业务层，想（发送|接收）的一个包，可以是一段文字，一个文件，一个语音连接。
 * Connector：表示一个链接，即服务端，和客户端。提供发送，以及接收到数据时给出回调。当有语音传输时，负责绑定语音传输的channel。
 * SocketChannelAdatper：实现了sender和receiver，将当前channel注册到IoProvider中，当channel就绪时调用callback，回调到dispatcher中进行发送与接收。
-* SenderDispatcher/ReceiveDispatcher：对packet进行分发，内部调用PacketReader/PacketWriter进行packet的消费，并从其中提供IoArgs给注册在IoProvider的回调中进行消费
-* PackerReader/PackerWriter：从Dispatcher中获取到Packet，拆分成Frame，回送给Dispatcher IoArgs
+* SenderDispatcher/ReceiveDispatcher：对packet发送，内部调用PacketReader进行packet的读取，并从其中提供IoArgs给注册在IoProvider的回调中进行消费。对packet的接收，从IoProvider中接受到IoArgs，然后然后通过PacketWriter转换成Frame，
+* PackerReader/PackerWriter：从Dispatcher中获取到Packet，拆分成Frame，回送给Dispatcher IoArgs。
 * Scheduler：执行或者延时执行任务。
 * ConnectorHandlerChain：消费消息的链式结构。对到达的消息，进行链式分发进行消费。
 * ConnectorHandler：继承Connector，提供字符chain头和close的头，并提供当文件，或者直播流到达时的outputStream去接收对应的数据。
@@ -81,11 +81,26 @@
 
 #### 发送流程解析
 
-Sender.send(Packet)->
+> 1. Connector.send(Packet)-> 调用分发器进行数据发送
+>
+> 2. SenderDispatcher.send(Packet)-> : 将 packet 塞入待发送的 Queue 中，请求注册发送（requestSend）
+>
+> 3. SenderDispatcher.requestSend()-> : 判断当前状态，使用 PacketReader.requestTaskPacket() 构建SendHeaderFrame，添加在发送帧队列，调用 Sender.postSendAsync()。进行异步发送，后续循环发送中出现异常，重新进入此方法。如果当前没有packet的话，这不会满足发送注册发送需求
+>
+> 4. Sender.postSendAsync()->：调用 IoProivder.register(HandleProviderCallback)注册，当 channel 可写时回调onProviderIo()。
+>
+> 5. HandleProviderCallback.onProviderIo()->：当Channel 就绪时，需IoArgsEventProcessor.providerIoArgs()以发送，发送完毕调用 onConsumeComplete，发生异常onConsumeFailed。
+>
+> 6. IoArgsEventProcessor.providerIoArgs()->：实际会回到SenderDispatcher中，调用 packetReader.fillData() 返回一个 IoArgs
+>
+> 7. PacketReader.fillData()->：获取当前的 frame，调用 AbsSendFrame.handle(IoArgs) 填充数据。如果此 frame 的数据全部发送完毕时，构建下一个待发送的 Frame，添加队列，如下一个 Frame 不存在，并且这个 Frame 不是HeaderFrame，则表示一个 packet 发送完毕。最后，将已发送的Frame，pop 出来；
+>
+> 8. IoArgsEventProcessor.onConsumeComplete()->：channel，发送完成一次数据，判断当前状态，并PacketReader.requestTaskPacket() 判断是否还有数据待发送。则会重新注册，就绪时，重走5-7的流程
+> 9. IoArgsEventProcessor.onConsumeFailed()->：如果为 EmptyIoArgsExcetption，表示，再第7步的 fillData 出了异常或者被 Cancel 了，重走3-7流程重新取数据发送，否则出现异常，关闭当前通道。
 
 #### 接收流程解析
 
-
+接收流程大致相同，再启动的时候注册是否处于可读监听。当数据就绪时，将数据进行一个frame一个frame接收，然后一个frame一个frame进行写出。
 
 ## 关键类介绍
 
@@ -312,7 +327,7 @@ public abstract class Packet<Stream extends Closeable> implements Closeable {
 }
 ```
 
-发送(SenderDispatcher|PacketReader)：SendPacket->SendFrame->IoArg->Channel
+发送：(SenderDispatcher|PacketReader)：SendPacket->SendFrame->IoArg->Channel
 
 接收：channel->IoArgs->ReceiveFrame->ReceivePacket
 
