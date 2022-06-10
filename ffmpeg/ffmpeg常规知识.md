@@ -200,4 +200,14 @@ H264结构：
 2. 从packet里读取nal_size，循环获取h264帧
 3. 写入特征码（00 00 00 01）和 sps pps(如果是关键帧的话)
 4. 写入帧体数据，完成一帧写入
-5. 
+
+
+
+### 文件格式转换
+
+1. avformat_alloc_output_context2()/avformat_free_context()  分配输出文件的上下文
+2. avformat_new_stream() 新建一个流，视频流或者音频流
+3. avcodec_parameters_copy() 编解码器的参数拷贝过去。只是封装格式转换了
+4. avformat_write_header() 写入多媒体文件头
+5. av_write_frame()/av_interleaved_write_frame() 写入帧数据
+6. av_write_trailer() 写完多媒体文件数据后。写入多媒体文件尾部。
