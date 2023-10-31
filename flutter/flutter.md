@@ -72,9 +72,21 @@ flutter热重载原理：https://emop.jd.com/blogs/2021/4/Interpretation%20of%20
 
 ### fultter渲染机制
 
+flutter一切皆Widget，但是实际执行绘制的对象，却是RenderObject。
+
 Flutter UI有三大元素：**Widget、Element、RenderObject**
 
+1. **Widget**：Widget是Flutter中的基本构建块，它是一个不可变的配置描述。Widget主要负责定义组件的配置、外观和功能。它们是UI的声明性描述。当应用程序的状态发生变化时，Flutter会根据新的Widget树重建UI。
+2. **Element**：Element是Widget的实例化对象，它是Widget在运行时的具体表示。每个Widget会创建一个对应的Element。Element的主要作用是将Widget与底层渲染树连接起来。它还负责管理子元素和父元素之间的关系、生命周期管理以及有状态Widget的状态。Element树是Widget树的一个镜像。
+3. **RenderObject**：RenderObject是实际执行绘制操作的对象，它负责布局和绘制。RenderObject树是Element树的一个子集，只有那些需要布局和绘制的Element才会创建对应的RenderObject。RenderObject负责计算其大小、位置、以及处理绘制操作。
 
+`setState`实现局部更新的机制：
+
+1. 当调用`setState`方法时，会向Flutter框架传递一个回调函数。在这个回调函数内部，你可以对组件的状态进行修改。
+2. `setState`方法会将组件标记为"脏"（dirty），这意味着组件的状态发生了变化。
+3. 在下一次绘制帧（frame）时，Flutter会检查所有被标记为"脏"的组件，并重新构建这些组件的UI。这个过程会触发组件的`build`方法，生成新的Widget树。
+4. Flutter会比较新旧Widget树，并确定哪些部分发生了变化。然后，它会更新Element树和RenderObject树，以反映这些变化。
+5. 最后，Flutter会重新绘制那些发生变化的RenderObject，从而实现局部更新。
 
 
 
